@@ -19,28 +19,44 @@ NOTICE
 ### 7.1 了解x86保护模式中的特权级
 
 1. X86有几个特权级？
++ 四个
 
 
 2. 不同特权级有什么区别？
-
++ 有些指令只能在高特权级使用，且低特权级无法修改高特权级的数据，只能访问高特权级的服务
 
 3. 请说明CPL、DPL和RPL在中断响应、函数调用和指令执行时的作用。
-
++ RPL：段寄存器 DS，ES，FS, GS
++ CPL：段寄存器 CS， SS
++ DPL：段描述符， 门描述符（表示中断和陷入的特权级）
 
 4. 写一个示例程序，完成4个特权级间的函数调用和数据访问时特权级控制的作用。
 
 ### 7.2 了解特权级切换过程
 
 1. 一条指令在执行时会有哪些可能的特权级判断？
++ 访问段时，需要检查是否满足 MAX(CPL, RPL) <= DPL[段]
++ 访问门时，需要检查是否满足 CPL <= DPL[门] 且 CPL >= DPL[段]
++ 但当访问堆栈段寄存器时，需要 CPL，RPL 和 DPL 这 3 个值必须完全一致，才可以被加载。
+
 2. 在什么情况下会出现特权级切换？
++ 低特权级代码调用高特权级代码时
++ 发生中断时
 
 3. int指令在ring0和ring3的执行行为有什么不同？
-
++ 压栈内容不同，ring3 时需要多压栈 SS 和 ESP
++ ring3 时执行 int 指令需要进行栈的切换
 
 4. 如何利用int和iret指令完成不同特权级的切换？
-
++ 人工构造需要的栈结构，然后通过int和iret指令进行切换
 
 5. TSS和Task Register的作用是什么？
++ TSS 被操作系统内核用于任务管理，保存如下信息
+    + Processor register state
+    + I/O port permissions
+    + Inner-level stack pointers
+    + Previous TSS link
++ TR 保存 TSS 的段选择子
 
  > [Task state segment](https://en.wikipedia.org/wiki/Task_state_segment)
 
@@ -49,7 +65,11 @@ NOTICE
 ### 7.3 了解段/页表
 
 1. 一条指令执行时最多会出现多少次地址转换？
++ 1+n：1次逻辑地址转换为线性地址，n级页表需要转换n次
+
 2. 描述X86-32的MMU地址转换过程；
++ 逻辑地址中的segment selector通过查找GDT获得段基址，加上偏移得到线性地址
++ 线性地址查找Page Directory获得页表起始地址，根据偏移查找页基址，再根据页内偏移获得物理地址
 
 ### 7.4 了解UCORE建立段/页表
 
